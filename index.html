@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="lib/d3.v4.min.js"></script>
+    <style>
+        .axis path,
+        .axis line{
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .axis text{
+            font: 10px sans-serif;
+        }
+        .cells :hover circle{
+            fill: red;
+        }
+    </style>
+</head>
+<body>
+<svg id="mainsvg"></svg>
+<script src="javascript/main.js"></script>
+
+</body>
+</html>
