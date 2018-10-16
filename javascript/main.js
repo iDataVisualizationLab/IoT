@@ -40,6 +40,7 @@ mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 
 d3.json("data/iothackernews.json", function (error, data) {
     if (error) throw error;
+    //<editor-fold desc="process data">
     let stories = [];
     data.forEach(d => {
         //initialize all level as 0//this will get increased later-on when we count.
@@ -51,86 +52,6 @@ d3.json("data/iothackernews.json", function (error, data) {
     });
     let authors = processAuthors(data);
     let allData = data.concat(authors);
-    debugger
-    scaleX.domain(d3.extent(data.map(d => +d.timestamp)));
-    let scoreDomain = d3.extent(stories.map(d => +d.score));
-    scaleStoryScore.domain(scoreDomain);
-    scaleAuthorScore.domain(scoreDomain);
-    scaleRadius.domain(d3.extent(stories.concat(authors).map(d => Math.sqrt(d.postCount))));
-
-    let simulation = d3.forceSimulation(allData)
-        .force("x", d3.forceX(d => scaleX(+d.timestamp)))
-        .force("y", d3.forceY(d => {
-            if (d.type === "author") {
-                return scaleAuthorScore(+d.score);
-            }
-            if (d.type === "story") {
-                return scaleStoryScore(+d.score);
-            }
-            if (d.type === "comment") {
-                return commentStartY + 80 + d.commentLevel * commentHeight;//80 is for the expansion of the comments due to collisions (may remove this since displayin gcomments on demand only => would not have this many.
-            }
-        }))
-        .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
-        .stop();
-
-    for (let i = 0; i < 120; i++) {
-        simulation.tick();
-    }
-    mainGroup.append("g")
-        .attr("class", 'axis axis--x')
-        .attr("transform", `translate(0,${storyStartY + storyHeight + margin.axisx})`)
-        .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
-
-    mainGroup.append("g")
-        .attr("class", "axis axis--y")
-        .call(d3.axisLeft(scaleAuthorScore).ticks(10, ".0s"));
-
-    mainGroup.append("g")
-        .attr("class", "axis axis--y")
-        .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
-
-    let cell = mainGroup.append("g")
-        .attr("class", "cells")
-        .attr("transform", `translate(${margin.axisx}, 0)`)
-        .selectAll("g").data(allData).enter().append("g");
-
-    cell.append("circle")
-        .attr("id", d => "id"+d.id)
-        .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
-        .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
-        .on("mouseover", (d) => {
-            d3.select("#info").style("display", "inline");
-            if(d.type==="author"){
-                displayAuthor(d);
-            }
-            if(d.type==="story"){
-                displayStory(d);
-            }
-            if(d.type==="comment"){
-                displayComment(d);
-            }
-            dispatch.call("up", null, d);
-            dispatch.call("down", null, d);
-        })
-        .on("mouseleave", () => {
-            d3.select("#info").style("display", "none");
-            mainGroup.selectAll(".linkgroup").remove();
-            mainGroup.selectAll(".brushed").classed("brushed", false);
-        });
-
-
-    function formatTime(unix_timestamp) {
-        let date = new Date(unix_timestamp),
-            year = date.getFullYear(),
-            month = date.getMonth(),
-            day = date.getDay(),
-            formattedTime = year + '-' + month + '-' + day;
-        return formattedTime;
-    }
-
     function getChildren(postId, data) {
 
         let result = data.filter(d => d.parent === postId);
@@ -184,15 +105,108 @@ d3.json("data/iothackernews.json", function (error, data) {
         return result;
     }
 
+    //</editor-fold>
+
+    scaleX.domain(d3.extent(data.map(d => +d.timestamp)));
+    let scoreDomain = d3.extent(stories.map(d => +d.score));
+    scaleStoryScore.domain(scoreDomain);
+    scaleAuthorScore.domain(scoreDomain);
+    scaleRadius.domain(d3.extent(stories.concat(authors).map(d => Math.sqrt(d.postCount))));
+
+    //<editor-fold desc="force simulation">
+    let simulation = d3.forceSimulation(allData)
+        .force("x", d3.forceX(d => scaleX(+d.timestamp)))
+        .force("y", d3.forceY(d => {
+            if (d.type === "author") {
+                return scaleAuthorScore(+d.score);
+            }
+            if (d.type === "story") {
+                return scaleStoryScore(+d.score);
+            }
+            if (d.type === "comment") {
+                return commentStartY + 80 + d.commentLevel * commentHeight;//80 is for the expansion of the comments due to collisions (may remove this since displayin gcomments on demand only => would not have this many.
+            }
+        }))
+        .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
+        .stop();
+
+    for (let i = 0; i < 120; i++) {
+        simulation.tick();
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="axis">
+    mainGroup.append("g")
+        .attr("class", 'axis axis--x')
+        .attr("transform", `translate(0,${storyStartY + storyHeight + margin.axisx})`)
+        .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
+
+    mainGroup.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(scaleAuthorScore).ticks(10, ".0s"));
+
+    mainGroup.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
+
+    function formatTime(unix_timestamp) {
+        let date = new Date(unix_timestamp),
+            year = date.getFullYear(),
+            month = date.getMonth(),
+            day = date.getDate(),
+            formattedTime = year + '-' + (month+1) + '-' + day;
+        return formattedTime;
+    }
+    //</editor-fold>
+
+    let links = mainGroup.append("g")
+        .attr("class", "links")
+        .attr("transform", `translate(${margin.axisx}, 0)`);
+
+    let cells = mainGroup.append("g")
+        .attr("class", "cells")
+        .attr("transform", `translate(${margin.axisx}, 0)`)
+        .selectAll("g").data(allData).enter().append("g");
+
+    cells.append("circle")
+        .attr("id", d => "id"+d.id)
+        .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
+        .on("mouseover", (d) => {
+            cells.selectAll("circle").classed("faded", true);
+            d3.select("#info").style("display", "inline");
+            if(d.type==="author"){
+                displayAuthor(d);
+            }
+            if(d.type==="story"){
+                displayStory(d);
+            }
+            if(d.type==="comment"){
+                displayComment(d);
+            }
+            dispatch.call("up", null, d);
+            dispatch.call("down", null, d);
+
+        })
+        .on("mouseleave", () => {
+            cells.selectAll("circle").classed("faded", false);
+            d3.select("#info").style("display", "none");
+            links.selectAll("*").remove();
+            mainGroup.selectAll(".brushed").classed("brushed", false);
+        });
+
     dispatch.on("up", node => {
         if (node.type === "comment" || node.type === "story") {
+            d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
             let parents = getParent(node, allData);
             //brush the nodes
             parents.forEach(p => {
-                d3.select("#id" + p.id).classed("brushed", true);
+                d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
             });
             //create links from this node to the parents
-            mainGroup.append("g").attr("class", "linkgroup").attr("transform", `translate(${margin.axisx}, 0)`)
+            links
                 .selectAll(".links")
                 .data(parents)
                 .enter()
@@ -214,10 +228,12 @@ d3.json("data/iothackernews.json", function (error, data) {
     });
     dispatch.on("down", node => {
         let children = getChildrenOfNode(node, allData);
+        d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
+
         children.forEach(p => {
-            d3.select("#id" + p.id).classed("brushed", true);
+            d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
         });
-        mainGroup.append("g").attr("class", "linkgroup").attr("transform", `translate(${margin.axisx}, 0)`)
+        links
             .selectAll(".links")
             .data(children)
             .enter()
