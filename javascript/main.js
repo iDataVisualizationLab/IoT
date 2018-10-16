@@ -20,21 +20,7 @@ let mainsvg = d3.select("#mainsvg"),
     dispatch = d3.dispatch("up", "down");
 
 
-function getAuthor(post, data) {
-    let result = data.filter(d => d.by === post.by && d.type === "author");
-    return result;
-}
 
-function getParent(post, data) {
-    let result = [];
-    if (post.type === "author") {
-        return result;
-    } else {
-        result = data.filter(d => d.id === post.parent).concat(getAuthor(post, data));
-        return result;
-    }
-    return result;
-}
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 
@@ -107,7 +93,21 @@ d3.json("data/iothackernews.json", function (error, data) {
         });
         return result;
     }
+    function getAuthor(post, data) {
+        let result = data.filter(d => d.by === post.by && d.type === "author");
+        return result;
+    }
 
+    function getParent(post, data) {
+        let result = [];
+        if (post.type === "author") {
+            return result;
+        } else {
+            result = data.filter(d => d.id === post.parent).concat(getAuthor(post, data));
+            return result;
+        }
+        return result;
+    }
     //</editor-fold>
 
     scaleX.domain(d3.extent(data.map(d => +d.timestamp)));
@@ -170,7 +170,7 @@ d3.json("data/iothackernews.json", function (error, data) {
         .attr("class", "cells")
         .attr("transform", `translate(${margin.axisx}, 0)`)
         .selectAll("g").data(allData).enter().append("g");
-
+    let clicked = false;
     cells.append("circle")
         .attr("id", d => "id"+d.id)
         .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
@@ -178,26 +178,32 @@ d3.json("data/iothackernews.json", function (error, data) {
         .attr("cy", d => d.y)
         .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
         .on("mouseover", (d) => {
-            cells.selectAll("circle").classed("faded", true);
-            d3.select("#info").style("display", "inline");
-            if(d.type==="author"){
-                displayAuthor(d);
+            if(!clicked){
+                cells.selectAll("circle").classed("faded", true);
+                d3.select("#info").style("display", "inline");
+                if(d.type==="author"){
+                    displayAuthor(d);
+                }
+                if(d.type==="story"){
+                    displayStory(d);
+                }
+                if(d.type==="comment"){
+                    displayComment(d);
+                }
+                dispatch.call("up", null, d);
+                dispatch.call("down", null, d);
             }
-            if(d.type==="story"){
-                displayStory(d);
-            }
-            if(d.type==="comment"){
-                displayComment(d);
-            }
-            dispatch.call("up", null, d);
-            dispatch.call("down", null, d);
-
         })
         .on("mouseleave", () => {
-            cells.selectAll("circle").classed("faded", false);
-            d3.select("#info").style("display", "none");
-            links.selectAll("*").remove();
-            mainGroup.selectAll(".brushed").classed("brushed", false);
+            if(!clicked){
+                cells.selectAll("circle").classed("faded", false);
+                d3.select("#info").style("display", "none");
+                links.selectAll("*").remove();
+                mainGroup.selectAll(".brushed").classed("brushed", false);
+            }
+        })
+        .on("click", ()=>{
+            clicked = !clicked;
         });
 
     dispatch.on("up", node => {
@@ -275,4 +281,9 @@ d3.json("data/iothackernews.json", function (error, data) {
             `Text: ${comment.text}`;
         d3.select("#info").html(msg);
     }
+    document.onkeyup=function(e){
+        if (e.key === "Escape"){
+            clicked = false;
+        }
+    };
 });
