@@ -102,10 +102,21 @@ d3.json("data/iothackernews.json", function (error, data) {
         .attr("cy", d => d.y)
         .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
         .on("mouseover", (d) => {
+            d3.select("#info").style("display", "inline");
+            if(d.type==="author"){
+                displayAuthor(d);
+            }
+            if(d.type==="story"){
+                displayStory(d);
+            }
+            if(d.type==="comment"){
+                displayComment(d);
+            }
             dispatch.call("up", null, d);
             dispatch.call("down", null, d);
         })
-        .on("mouseleave", (d) => {
+        .on("mouseleave", () => {
+            d3.select("#info").style("display", "none");
             mainGroup.selectAll(".linkgroup").remove();
             mainGroup.selectAll(".brushed").classed("brushed", false);
         });
@@ -224,4 +235,25 @@ d3.json("data/iothackernews.json", function (error, data) {
             dispatch.call("down", null, c);
         });
     });
+    function displayAuthor(author){
+        let msg = "<b>Author: </b>" + author.id + "<br/>" +
+            "Posts: " + author.postCount + "<br/>" +
+            "Average score: " + author.score;
+        d3.select("#info").html(msg);
+    }
+    function displayStory(story){
+        let msg = "<b>Story: </b>" + story.title + "<br/>" +
+            "Posted on: " + formatTime(story.timestamp) + "<br/>" +
+            "Comments: " + story.postCount + "<br/>" +
+            "Average score: " + story.score + "<br/>" +
+            `URL: <a href='${story.url}'>${story.url}</a>`;
+        d3.select("#info").html(msg);
+    }
+    function displayComment(comment){
+        let msg = "<b>By: </b>" + comment.by + "<br/>" +
+            "Posted on: " + formatTime(comment.timestamp) + "<br/>" +
+            "Sub-Comments: " + comment.postCount + "<br/>" +
+            `Text: ${comment.text}`;
+        d3.select("#info").html(msg);
+    }
 });

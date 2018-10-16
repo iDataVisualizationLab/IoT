@@ -20,9 +20,20 @@
         .cells .brushed{
             fill: red;
         }
+        #info{
+            border: solid 3px orange;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            padding: 10px;
+            position: absolute;
+            top: 55px;
+            left: 55px;
+        }
     </style>
 </head>
 <body>
+<div id="info" style="display: none; background-color:white;"></div>
 <svg id="mainsvg"></svg>
 <script src="javascript/main.js"></script>
 
