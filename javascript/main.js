@@ -21,8 +21,7 @@ let mainsvg = d3.select("#mainsvg"),
 
 
 function getAuthor(post, data) {
-    let authorName = post.by;
-    let result = data.filter(d => d.by === authorName && d.type === "author");
+    let result = data.filter(d => d.by === post.by && d.type === "author");
     return result;
 }
 
@@ -97,14 +96,18 @@ d3.json("data/iothackernews.json", function (error, data) {
         .selectAll("g").data(allData).enter().append("g");
 
     cell.append("circle")
+        .attr("id", d => "id"+d.id)
         .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
         .attr("cx", d => d.x)
         .attr("cy", d => d.y)
         .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
-        .on("mouseover", (d)=>{
-            mainGroup.selectAll(".linkgroup").remove();
+        .on("mouseover", (d) => {
             dispatch.call("up", null, d);
             dispatch.call("down", null, d);
+        })
+        .on("mouseleave", (d) => {
+            mainGroup.selectAll(".linkgroup").remove();
+            mainGroup.selectAll(".brushed").classed("brushed", false);
         });
 
 
@@ -125,11 +128,12 @@ d3.json("data/iothackernews.json", function (error, data) {
         });
         return result;
     }
-    function getChildrenOfNode(node, data){
+
+    function getChildrenOfNode(node, data) {
         let result = [];
-        if(node.type==="author"){
-            result = data.filter(p=>(p.by === node.by) && p.type !== "author");
-        }else{
+        if (node.type === "author") {
+            result = data.filter(p => (p.by === node.by) && p.type !== "author");
+        } else {
             result = getChildren(node.id, data);
         }
         return result;
@@ -152,6 +156,7 @@ d3.json("data/iothackernews.json", function (error, data) {
     function processAuthors(data) {
         let result = [];
         let nested = d3.nest().key(d => d.by).sortKeys(d3.ascending).map(data.filter(p => p.type === "story"));
+        // let nested = d3.nest().key(d => d.by).sortKeys(d3.ascending).map(data);
         let authors = d3.keys(nested);
         authors = authors.filter(a => a.indexOf("$") >= 0);
         authors.forEach(a => {
@@ -167,9 +172,14 @@ d3.json("data/iothackernews.json", function (error, data) {
         });
         return result;
     }
+
     dispatch.on("up", node => {
         if (node.type === "comment" || node.type === "story") {
             let parents = getParent(node, allData);
+            //brush the nodes
+            parents.forEach(p => {
+                d3.select("#id" + p.id).classed("brushed", true);
+            });
             //create links from this node to the parents
             mainGroup.append("g").attr("class", "linkgroup").attr("transform", `translate(${margin.axisx}, 0)`)
                 .selectAll(".links")
@@ -181,16 +191,21 @@ d3.json("data/iothackernews.json", function (error, data) {
                 .attr("x2", d => d.x)
                 .attr("y2", d => d.y)
                 .attr("stroke", "red")
-                .attr("stroke-width", 1);
-            parents.forEach(p=>{
+                .attr("stroke-width", 0.3)
+                .attr("opacity", .9)
+                .style("pointer-events", "none");
+            parents.forEach(p => {
                 //bubble up all the parents
                 dispatch.call("up", null, p);
             });
+
         }
     });
-    dispatch.on("down", node =>{
-       let children = getChildrenOfNode(node, allData);
-       debugger
+    dispatch.on("down", node => {
+        let children = getChildrenOfNode(node, allData);
+        children.forEach(p => {
+            d3.select("#id" + p.id).classed("brushed", true);
+        });
         mainGroup.append("g").attr("class", "linkgroup").attr("transform", `translate(${margin.axisx}, 0)`)
             .selectAll(".links")
             .data(children)
@@ -201,8 +216,10 @@ d3.json("data/iothackernews.json", function (error, data) {
             .attr("x2", d => d.x)
             .attr("y2", d => d.y)
             .attr("stroke", "black")
-            .attr("stroke-width", 1);
-        children.forEach(c=>{
+            .attr("stroke-width", 0.5)
+            .attr("opacity", .9)
+            .style("pointer-events", "none");
+        children.forEach(c => {
             //bubble up all the parents
             dispatch.call("down", null, c);
         });
