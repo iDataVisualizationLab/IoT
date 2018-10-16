@@ -41,6 +41,9 @@ mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 d3.json("data/iothackernews.json", function (error, data) {
     if (error) throw error;
     //<editor-fold desc="process data">
+    //take data from 2011 or later only
+    data = data.filter(d=>d.timestamp >= new Date("2011-01-01"));
+
     let stories = [];
     data.forEach(d => {
         //initialize all level as 0//this will get increased later-on when we count.
@@ -138,7 +141,7 @@ d3.json("data/iothackernews.json", function (error, data) {
     //<editor-fold desc="axis">
     mainGroup.append("g")
         .attr("class", 'axis axis--x')
-        .attr("transform", `translate(0,${storyStartY + storyHeight + margin.axisx})`)
+        .attr("transform", `translate(${margin.axisx},${storyStartY + storyHeight + margin.axisx})`)
         .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
 
     mainGroup.append("g")
