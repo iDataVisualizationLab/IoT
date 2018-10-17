@@ -5,7 +5,10 @@ let mainsvg = d3.select("#mainsvg"),
     margin = {top: 40, right: 40, bottom: 40, left: 40, axisx: 40, axisy: 40, storyTop: 20},
     width = svgWidth - margin.left - margin.right - margin.axisx,
     height = svgHeight - margin.top - margin.storyTop - margin.axisx - margin.bottom,
-    storyHeight = authorHeight = commentHeight = height / 3,
+    wordStreamHeight = 200,
+    wordStreamWidth = width;
+
+    storyHeight = authorHeight = commentHeight = (height -wordStreamHeight) / 3,
     authorStartY = 0,
     authorEndY = authorStartY + authorHeight,
     storyStartY = authorHeight + margin.storyTop,
@@ -16,11 +19,8 @@ let mainsvg = d3.select("#mainsvg"),
     scaleAuthorScore = d3.scaleLog().rangeRound([authorEndY, authorStartY]),
     scaleStoryScore = d3.scaleLog().rangeRound([storyEndY, storyStartY]),
     scaleRadius = d3.scaleLinear().rangeRound([2, 9]),
-    mainGroup = mainsvg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`),
+    mainGroup = mainsvg.append("g").attr("transform", `translate(${margin.left}, ${margin.top + wordStreamHeight})`),
     dispatch = d3.dispatch("up", "down");
-
-
-
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 
@@ -39,6 +39,9 @@ d3.json("data/iothackernews.json", function (error, data) {
             stories.push(d);
         }
     });
+    //test the data
+    loadNewsData(stories, draw);
+
     let authors = processAuthors(data);
     let allData = data.concat(authors);
     function getChildren(postId, data) {
