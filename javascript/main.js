@@ -7,6 +7,8 @@ let mainsvg = d3.select("#mainsvg"),
     height = svgHeight - margin.top - margin.storyTop - margin.axisx - margin.bottom,
     wordStreamHeight = 200,
     wordStreamWidth = width;
+let clicked = false;
+let links = null;
 
 storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
     authorStartY = 0 + wordStreamHeight,
@@ -56,7 +58,11 @@ d3.json("data/iothackernews.json", function (error, data) {
 
     function getChildrenOfNode(node, data) {
         let result = [];
-        if (node.type === "author") {
+        if(node.type==="word"){
+            let authors = wordAuthors[node.id];
+            result = data.filter(p=> (p.type==="author") && authors.indexOf(p.id) >= 0);
+        }
+        else if (node.type === "author") {
             result = data.filter(p => (p.by === node.by) && p.type !== "author");
         } else {
             result = getChildren(node.id, data);
@@ -179,7 +185,7 @@ d3.json("data/iothackernews.json", function (error, data) {
 
     //</editor-fold>
 
-    let links = mainGroup.append("g")
+    links = mainGroup.append("g")
         .attr("class", "links")
         .attr("transform", `translate(${margin.axisx}, 0)`);
 
@@ -187,7 +193,7 @@ d3.json("data/iothackernews.json", function (error, data) {
         .attr("class", "cells")
         .attr("transform", `translate(${margin.axisx}, 0)`)
         .selectAll("g").data(allData).enter().append("g");
-    let clicked = false;
+
     cells.append("circle")
         .attr("id", d => "id" + d.id)
         .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
