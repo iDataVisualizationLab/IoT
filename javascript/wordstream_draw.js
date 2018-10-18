@@ -63,18 +63,19 @@ function draw(data) {
             return d.placed ? (placed ? "visible" : "hidden") : (placed ? "hidden" : "visible");
         })
         .style("cursor", "pointer")
-        .on("mouseover", d => {
+        .on("mouseover", d => {//Todo: Can generalize this together with the cells so we don't have to re-code
             if (!clicked) {
                 mainGroup.selectAll("circle").classed("faded", true);
                 mainGroup.selectAll("text").classed("faded", true);
                 dispatch.call("down", null, d);
             }
-        }).on("mouseleave", d => {
-        if (!clicked) {
-            mainGroup.selectAll(".faded").classed("faded", false);
-            links.selectAll("*").remove();
-            mainGroup.selectAll(".brushed").classed("brushed", false);
-        }
-    });
+        })
+        .on("mouseleave", () => {
+            if (!clicked) {
+                mainGroup.selectAll(".faded").classed("faded", false);
+                links.selectAll("*").remove();
+                mainGroup.selectAll(".brushed").classed("brushed", false);
+            }
+        });
 }
 

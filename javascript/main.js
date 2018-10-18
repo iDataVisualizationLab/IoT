@@ -58,9 +58,9 @@ d3.json("data/iothackernews.json", function (error, data) {
 
     function getChildrenOfNode(node, data) {
         let result = [];
-        if(node.type==="word"){
+        if (node.type === "word") {
             let authors = wordAuthors[node.id];
-            result = data.filter(p=> (p.type==="author") && authors.indexOf(p.id) >= 0);
+            result = data.filter(p => (p.type === "author") && authors.indexOf(p.id) >= 0);
         }
         else if (node.type === "author") {
             result = data.filter(p => (p.by === node.by) && p.type !== "author");
@@ -114,9 +114,9 @@ d3.json("data/iothackernews.json", function (error, data) {
         if (post.type === "author") {
             let words = authorWords[post.id];
             words.forEach(word => {
-                try{
+                try {
                     result.push(d3.select("#id" + word).datum());
-                }catch(err){
+                } catch (err) {
                     console.log(word);
                     debugger
                 }
@@ -232,16 +232,25 @@ d3.json("data/iothackernews.json", function (error, data) {
         });
 
     dispatch.on("up", node => {
-        d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
+        let selection = d3.select("#id" + node.id);
+        selection.classed("faded", false);
+        if (node.type !== "word") {//brush if it is not text
+            selection.classed("brushed", true);
+        }
         let parents = getParent(node, allData);
         //If the parents are words (parents of author) then we need to check if the word is displayed.
         if (node.type === "author") {
-            parents = parents.filter(p=>p.placed);
+            parents = parents.filter(p => p.placed);
         }
-        //brush the nodes
+        //brush the nodes (except the text)
         parents.forEach(p => {
-            d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
+            let selection = d3.select("#id" + p.id);
+            selection.classed("faded", false);
+            if (p.type !== "word") {//brush if it is not text
+                selection.classed("brushed", true);
+            }
         });
+
 
         //create links from this node to the parents
         links
@@ -266,7 +275,11 @@ d3.json("data/iothackernews.json", function (error, data) {
     });
     dispatch.on("down", node => {
         let children = getChildrenOfNode(node, allData);
-        d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
+        let selection = d3.select("#id" + node.id);
+        selection.classed("faded", false);
+        if (node.type !== "word") {
+            selection.classed("brushed", true)
+        }
 
         children.forEach(p => {
             d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
