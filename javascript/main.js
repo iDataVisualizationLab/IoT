@@ -8,10 +8,10 @@ let mainsvg = d3.select("#mainsvg"),
     wordStreamHeight = 200,
     wordStreamWidth = width;
 
-    storyHeight = authorHeight = commentHeight = (height -wordStreamHeight) / 3,
-    authorStartY = 0,
+storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
+    authorStartY = 0 + wordStreamHeight,
     authorEndY = authorStartY + authorHeight,
-    storyStartY = authorHeight + margin.storyTop,
+    storyStartY = authorEndY,
     storyEndY = storyStartY + storyHeight,
     commentStartY = storyStartY + storyHeight + axisHeight,
 
@@ -19,7 +19,7 @@ let mainsvg = d3.select("#mainsvg"),
     scaleAuthorScore = d3.scaleLog().rangeRound([authorEndY, authorStartY]),
     scaleStoryScore = d3.scaleLog().rangeRound([storyEndY, storyStartY]),
     scaleRadius = d3.scaleLinear().rangeRound([2, 9]),
-    mainGroup = mainsvg.append("g").attr("transform", `translate(${margin.left}, ${margin.top + wordStreamHeight})`),
+    mainGroup = mainsvg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`),
     dispatch = d3.dispatch("up", "down");
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
@@ -28,7 +28,7 @@ d3.json("data/iothackernews.json", function (error, data) {
     if (error) throw error;
     //<editor-fold desc="process data">
     //take data from 2011 or later only
-    data = data.filter(d=>d.timestamp >= new Date("2011-01-01"));
+    data = data.filter(d => d.timestamp >= new Date("2011-01-01"));
 
     let stories = [];
     data.forEach(d => {
@@ -44,6 +44,7 @@ d3.json("data/iothackernews.json", function (error, data) {
 
     let authors = processAuthors(data);
     let allData = data.concat(authors);
+
     function getChildren(postId, data) {
 
         let result = data.filter(d => d.parent === postId);
@@ -96,6 +97,7 @@ d3.json("data/iothackernews.json", function (error, data) {
         });
         return result;
     }
+
     function getAuthor(post, data) {
         let result = data.filter(d => d.by === post.by && d.type === "author");
         return result;
@@ -104,6 +106,16 @@ d3.json("data/iothackernews.json", function (error, data) {
     function getParent(post, data) {
         let result = [];
         if (post.type === "author") {
+            let words = authorWords[post.id];
+            words.forEach(word => {
+                try{
+                    result.push(d3.select("#id" + word).datum());
+                }catch(err){
+                    console.log(word);
+                    debugger
+                }
+
+            });
             return result;
         } else {
             result = data.filter(d => d.id === post.parent).concat(getAuthor(post, data));
@@ -111,6 +123,7 @@ d3.json("data/iothackernews.json", function (error, data) {
         }
         return result;
     }
+
     //</editor-fold>
 
     scaleX.domain(d3.extent(data.map(d => +d.timestamp)));
@@ -160,9 +173,10 @@ d3.json("data/iothackernews.json", function (error, data) {
             year = date.getFullYear(),
             month = date.getMonth(),
             day = date.getDate(),
-            formattedTime = year + '-' + (month+1) + '-' + day;
+            formattedTime = year + '-' + (month + 1) + '-' + day;
         return formattedTime;
     }
+
     //</editor-fold>
 
     let links = mainGroup.append("g")
@@ -175,22 +189,24 @@ d3.json("data/iothackernews.json", function (error, data) {
         .selectAll("g").data(allData).enter().append("g");
     let clicked = false;
     cells.append("circle")
-        .attr("id", d => "id"+d.id)
+        .attr("id", d => "id" + d.id)
         .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
         .attr("cx", d => d.x)
         .attr("cy", d => d.y)
         .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
         .on("mouseover", (d) => {
-            if(!clicked){
-                cells.selectAll("circle").classed("faded", true);
+            if (!clicked) {
+                mainGroup.selectAll("circle").classed("faded", true);
+                mainGroup.selectAll("text").classed("faded", true);
+
                 d3.select("#info").style("display", "inline");
-                if(d.type==="author"){
+                if (d.type === "author") {
                     displayAuthor(d);
                 }
-                if(d.type==="story"){
+                if (d.type === "story") {
                     displayStory(d);
                 }
-                if(d.type==="comment"){
+                if (d.type === "comment") {
                     displayComment(d);
                 }
                 dispatch.call("up", null, d);
@@ -198,45 +214,49 @@ d3.json("data/iothackernews.json", function (error, data) {
             }
         })
         .on("mouseleave", () => {
-            if(!clicked){
-                cells.selectAll("circle").classed("faded", false);
+            if (!clicked) {
+                mainGroup.selectAll(".faded").classed("faded", false);
                 d3.select("#info").style("display", "none");
                 links.selectAll("*").remove();
                 mainGroup.selectAll(".brushed").classed("brushed", false);
             }
         })
-        .on("click", ()=>{
+        .on("click", () => {
             clicked = !clicked;
         });
 
     dispatch.on("up", node => {
-        if (node.type === "comment" || node.type === "story") {
-            d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
-            let parents = getParent(node, allData);
-            //brush the nodes
-            parents.forEach(p => {
-                d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
-            });
-            //create links from this node to the parents
-            links
-                .selectAll(".links")
-                .data(parents)
-                .enter()
-                .append("line")
-                .attr("x1", node.x)
-                .attr("y1", node.y)
-                .attr("x2", d => d.x)
-                .attr("y2", d => d.y)
-                .attr("stroke", "red")
-                .attr("stroke-width", 0.3)
-                .attr("opacity", .9)
-                .style("pointer-events", "none");
-            parents.forEach(p => {
-                //bubble up all the parents
-                dispatch.call("up", null, p);
-            });
-
+        d3.select("#id" + node.id).classed("brushed", true).classed("faded", false);
+        let parents = getParent(node, allData);
+        //If the parents are words (parents of author) then we need to check if the word is displayed.
+        if (node.type === "author") {
+            parents = parents.filter(p=>p.placed);
         }
+        //brush the nodes
+        parents.forEach(p => {
+            d3.select("#id" + p.id).classed("brushed", true).classed("faded", false);
+        });
+
+        //create links from this node to the parents
+        links
+            .selectAll(".links")
+            .data(parents)
+            .enter()
+            .append("line")
+            .attr("x1", node.x)
+            .attr("y1", node.y)
+            .attr("x2", d => d.x)
+            .attr("y2", d => d.y)
+            .attr("stroke", "red")
+            .attr("stroke-width", 0.3)
+            .attr("opacity", .9)
+            .style("pointer-events", "none");
+        parents.forEach(p => {
+            //bubble up all the parents
+            dispatch.call("up", null, p);
+        });
+
+
     });
     dispatch.on("down", node => {
         let children = getChildrenOfNode(node, allData);
@@ -263,13 +283,15 @@ d3.json("data/iothackernews.json", function (error, data) {
             dispatch.call("down", null, c);
         });
     });
-    function displayAuthor(author){
+
+    function displayAuthor(author) {
         let msg = "<b>Author: </b>" + author.id + "<br/>" +
             "Posts: " + author.postCount + "<br/>" +
             "Average score: " + author.score;
         d3.select("#info").html(msg);
     }
-    function displayStory(story){
+
+    function displayStory(story) {
         let msg = "<b>Story: </b>" + story.title + "<br/>" +
             "Posted on: " + formatTime(story.timestamp) + "<br/>" +
             "Comments: " + story.postCount + "<br/>" +
@@ -277,15 +299,17 @@ d3.json("data/iothackernews.json", function (error, data) {
             `URL: <a href='${story.url}'>${story.url}</a>`;
         d3.select("#info").html(msg);
     }
-    function displayComment(comment){
+
+    function displayComment(comment) {
         let msg = "<b>By: </b>" + comment.by + "<br/>" +
             "Posted on: " + formatTime(comment.timestamp) + "<br/>" +
             "Sub-Comments: " + comment.postCount + "<br/>" +
             `Text: ${comment.text}`;
         d3.select("#info").html(msg);
     }
-    document.onkeyup=function(e){
-        if (e.key === "Escape"){
+
+    document.onkeyup = function (e) {
+        if (e.key === "Escape") {
             clicked = false;
         }
     };

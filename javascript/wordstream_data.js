@@ -1,25 +1,33 @@
+let authorWords = {};
+let wordAuthors = {};
+
 function loadNewsData(rawData, draw) {
     //<editor-fold desc="process stopwords">
     let stopWords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"];
     let removeWords = ["iot", "internet", "things", "--", "will"];
     stopWords = stopWords.concat(removeWords);
-    function sanitizeWord(word){
-        word = word.replace('"', '');
-        word = word.replace("?", '');
-        word = word.replace("\.", '');
-        word = word.replace(",", '');
-        word = word.replace(":", '');
-        word = word.replace("'", '');
-        word = word.replace("\[", '');
-        word = word.replace("\]", '');
-        word = word.replace("\(", '');
-        word = word.replace("\)", '');
-        word = word.replace("‘", '');
-        word = word.replace("“", '');
-        word = word.replace("”", '');
-        word = word.replace("-$", '');
+
+    function sanitizeWord(word) {
+        word = word.replace('"', '')
+            .replace("?", '')
+            .replace("\.", '')
+            .replace(",", '')
+            .replace(":", '')
+            .replace("'", '')
+            .replace("\[", '')
+            .replace("\]", '')
+            .replace("\(", '')
+            .replace("\)", '')
+            .replace("‘", '')
+            .replace("“", '')
+            .replace("”", '')
+            .replace("-$", '')
+            .replace("\$", "USD")
+            .replace("'", ' ');
+
         return word;
     }
+
     function removeStopWords(words, stopWords) {
         let result = [];
         words.forEach(w => {
@@ -36,6 +44,7 @@ function loadNewsData(rawData, draw) {
         result = result1;
         return result;
     }
+
     //</editor-fold>
 
     let outputFormat = d3.timeFormat('%Y');
@@ -45,15 +54,25 @@ function loadNewsData(rawData, draw) {
         let date = new Date(d.timestamp);
         date = outputFormat(date);
         if (!data[date]) data[date] = {};
-        data[date][topic] = data[date][topic] ? (data[date][topic] + ' ' + d.title) : (d.title);
+        let author = d.by;
+        let words = d.title.split(' ');
+        words = words.map(d => sanitizeWord((d)));
+        words = removeStopWords(words, stopWords);
+        words.forEach(word => {
+            let wordTime = word + date;
+            if (!authorWords[author]) authorWords[author] = [];
+            authorWords[author].push(wordTime);
+            if (!wordAuthors[wordTime]) wordAuthors[wordTime] = [];
+            wordAuthors[wordTime].push(author)
+        });
+        data[date][topic] = data[date][topic] ? (data[date][topic].concat(words)) : (words);
     });
+
 
     data = d3.keys(data).map(function (date) {
         let words = {};
         var raw = {};
-        raw[topic] = data[date][topic].split(' ');
-        raw[topic] = raw[topic].map(d=>sanitizeWord(d));
-        raw[topic] = removeStopWords(raw[topic], stopWords);
+        raw[topic] = data[date][topic];
         //Count word frequencies
         var counts = raw[topic].reduce(function (obj, word) {
             if (!obj[word]) {
@@ -74,7 +93,7 @@ function loadNewsData(rawData, draw) {
         }).filter(function (d) {//filter out empty words
             return d.text;
         });
-        words[topic] = words[topic].slice(0, d3.min([words[topic].length, 450]))
+        // words[topic] = words[topic].slice(0, d3.min([words[topic].length, 60]));
         return {
             date: date,
             words: words

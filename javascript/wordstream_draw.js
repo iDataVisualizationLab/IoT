@@ -1,3 +1,4 @@
+let texts = null;
 function draw(data){
     //Layout data
     let width = wordStreamWidth;
@@ -14,12 +15,12 @@ function draw(data){
         .font(font);
     let boxes = ws.boxes();
 
-    //Main group
-    let mainGroup = mainsvg.append('g').attr('transform', 'translate(' + (margin.left +margin.axisx)+ ',' + margin.top + ')');
-
     let allWords = [];
     d3.map(boxes.data, function(row){
         boxes.topics.forEach(topic=>{
+            row.words[topic].forEach(w=>{
+                w.id = (w.text+row.date);
+            });//add id for selection purpose.
             allWords = allWords.concat(row.words[topic]);
         });
     });
@@ -34,10 +35,12 @@ function draw(data){
         .domain(uniqueTerms)
         .range(c20.range());
     let placed = true;
-    mainGroup.selectAll('g').data(allWords).enter().append('g')
+    texts = mainGroup.append("g").attr("transform", `translate(${margin.axisx}, 0)`).selectAll('g').data(allWords).enter().append('g');
+    texts
         .attr("transform", function(d){return 'translate('+d.x+', '+d.y+')rotate('+d.rotate+')';})
         .append('text')
         .text(function(d){return d.text;})
+        .attr("id", d=>("id"+(d.id)))
         .attr("font-family", font)
         .attr("font-size", function(d){return d.fontSize;})
         .attr("fill", function(d, i){return termColorMap(d.text);})
