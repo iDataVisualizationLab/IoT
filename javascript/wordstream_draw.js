@@ -84,6 +84,7 @@ function draw(data) {
                 mainGroup.selectAll(".wordletext").classed("faded", true);
                 dispatch.call("down", null, d);
             }
+
         })
         .on("mouseleave", () => {
             if (!clicked) {

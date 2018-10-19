@@ -26,6 +26,7 @@ storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 
+
 d3.json("data/iothackernews.json", function (error, data) {
     if (error) throw error;
     //<editor-fold desc="process data">
@@ -203,7 +204,7 @@ d3.json("data/iothackernews.json", function (error, data) {
         .on("mouseover", (d) => {
             if (!clicked) {
                 mainGroup.selectAll("circle").classed("faded", true);
-                mainGroup.selectAll("text").classed("faded", true);
+                mainGroup.selectAll(".wordletext").classed("faded", true);
 
                 d3.select("#info").style("display", "inline");
                 if (d.type === "author") {
@@ -264,13 +265,12 @@ d3.json("data/iothackernews.json", function (error, data) {
             .attr("y2", d => d.y)
             .attr("stroke", "red")
             .attr("stroke-width", 0.3)
-            .attr("opacity", .9)
+            .attr("opacity", 0.9)
             .style("pointer-events", "none");
         parents.forEach(p => {
             //bubble up all the parents
             dispatch.call("up", null, p);
         });
-
 
     });
     dispatch.on("down", node => {
@@ -295,7 +295,7 @@ d3.json("data/iothackernews.json", function (error, data) {
             .attr("y2", d => d.y)
             .attr("stroke", "black")
             .attr("stroke-width", 0.5)
-            .attr("opacity", .9)
+            .attr("opacity", 0.9)
             .style("pointer-events", "none");
         children.forEach(c => {
             //bubble up all the parents
