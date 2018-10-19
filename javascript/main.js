@@ -1,6 +1,23 @@
+// START: loader spinner settings ****************************
+var opts = {
+    lines: 25, // The number of lines to draw
+    length: 15, // The length of each line
+    width: 5, // The line thickness
+    radius: 25, // The radius of the inner circle
+    color: '#000', // #rgb or #rrggbb or array of colors
+    speed: 2, // Rounds per second
+    trail: 50, // Afterglow percentage
+    className: 'spinner', // The CSS class to assign to the spinner
+};
+var target = document.getElementById('loadingSpinner');
+var spinner = new Spinner(opts).spin(target);
+// END: loader spinner settings ****************************
+
 let mainsvg = d3.select("#mainsvg"),
     svgWidth = 1600,
     svgHeight = 900,
+    // svgWidth = window.outerWidth,
+    // svgHeight = window.outerHeight,
     axisHeight = 40,
     margin = {top: 40, right: 40, bottom: 40, left: 40, axisx: 40, axisy: 40, storyTop: 20},
     width = svgWidth - margin.left - margin.right - margin.axisx,
@@ -332,4 +349,5 @@ d3.json("data/iothackernews.json", function (error, data) {
             clicked = false;
         }
     };
+    spinner.stop();
 });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="lib/d3.v4.min.js"></script>
-
+    <script src='lib/spin.min.js'></script>
     <style>
         .axis path,
         .axis line{
@@ -40,6 +40,8 @@
     </style>
 </head>
 <body>
+<!-- Spinner when loading -->
+<div id="loadingSpinner"></div>
 <div id="info" style="display: none; background-color:white;"></div>
 <svg id="mainsvg"></svg>
 <script src="javascript/d3.layout.wordstream.js"></script>
