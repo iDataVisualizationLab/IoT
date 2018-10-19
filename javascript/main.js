@@ -201,10 +201,9 @@ d3.json("data/iothackernews.json", function (error, rawData) {
                 }
             }))
             .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
-            .stop();
-
-        for (let i = 0; i < 120; i++) {
-            simulation.tick();
+            .on("tick", ticked);
+        function ticked(){
+            circles.transition().attr("transform", d=>`translate(${d.x}, ${d.y})`);
         }
         //</editor-fold>
 
@@ -230,12 +229,10 @@ d3.json("data/iothackernews.json", function (error, rawData) {
 
 
         let cells = cellGroup.selectAll("circle").data(allData);
-        cells.enter().append("circle")
+        let circles = cells.enter().append("circle")
             .merge(cells)
             .attr("id", d => "id" + d.id)
             .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
-            // .attr("cx", d => d.x)
-            // .attr("cy", d => d.y)
             .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
             .on("mouseover", (d) => {
                 if (!clicked) {
@@ -267,8 +264,13 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .on("click", () => {
                 clicked = !clicked;
             })
-            .transition().duration(1000).attr("transform", d=>`translate(${d.x}, ${d.y})`);
+
         cells.exit().remove();
+
+        //Calculate the position
+        for (let i = 0; i < 120; i++) {
+            simulation.tick();
+        }
 
         spinner.stop();
     }
