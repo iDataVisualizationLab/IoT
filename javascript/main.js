@@ -268,7 +268,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
         cells.exit().remove();
 
         //Calculate the position
-        for (let i = 0; i < 120; i++) {
+        for (let i = 0; i < 50; i++) {
             simulation.tick();
         }
 
