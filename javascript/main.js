@@ -28,6 +28,7 @@ let mainsvg = d3.select("#mainsvg"),
     links = null,
     axisx = null,
     authorScoreAxis = null,
+    storyScoreAxis = null,
     storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
     authorStartY = 0 + wordStreamHeight,
     authorEndY = authorStartY + authorHeight,
@@ -158,6 +159,9 @@ d3.json("data/iothackernews.json", function (error, rawData) {
 
     //The data
     let allData = null;
+    let cellGroup = mainGroup.append("g")
+        .attr("class", "cells")
+        .attr("transform", `translate(${margin.axisx}, 0)`);
     function updateDisplay(scoreRange){
         //Filter stories
         let data = rawData.filter(d=>{
@@ -168,8 +172,10 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             }
         });
         let stories = extractStories(data);
-        //Select all.
-        mainGroup.selectAll("*").remove();
+        ////TODO: Shouldn't remove all but add/update/exit merge
+        //Remove axis for author + story scores since we changed it
+        if(authorScoreAxis) authorScoreAxis.remove();
+        if(storyScoreAxis) storyScoreAxis.remove();
 
         loadNewsData(stories, draw);//load the hacker news stories (only title) to display for the word stream
         let authors = processAuthors(data); //load authors data
@@ -209,11 +215,10 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
 
         authorScoreAxis = mainGroup.append("g")
-            .attr("class", "axis axis--y");
-        authorScoreAxis
+            .attr("class", "axis axis--y")
             .call(d3.axisLeft(scaleAuthorScore).ticks(10, ".0s"));
 
-        mainGroup.append("g")
+        storyScoreAxis = mainGroup.append("g")
             .attr("class", "axis axis--y")
             .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
 
@@ -223,16 +228,14 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .attr("class", "links")
             .attr("transform", `translate(${margin.axisx}, 0)`);
 
-        let cells = mainGroup.append("g")
-            .attr("class", "cells")
-            .attr("transform", `translate(${margin.axisx}, 0)`)
-            .selectAll("g").data(allData).enter().append("g");
 
-        cells.append("circle")
+        let cells = cellGroup.selectAll("circle").data(allData);
+        cells.enter().append("circle")
+            .merge(cells)
             .attr("id", d => "id" + d.id)
             .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
+            // .attr("cx", d => d.x)
+            // .attr("cy", d => d.y)
             .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
             .on("mouseover", (d) => {
                 if (!clicked) {
@@ -263,9 +266,11 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             })
             .on("click", () => {
                 clicked = !clicked;
-            });
+            })
+            .transition().duration(1000).attr("transform", d=>`translate(${d.x}, ${d.y})`);
+        cells.exit().remove();
 
-
+        spinner.stop();
     }
     dispatch.on("up", node => {
         let selection = d3.select("#id" + node.id);
@@ -375,7 +380,6 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             clicked = false;
         }
     };
-    spinner.stop();
     //<editor-fold: desc="section for the slider">
     let brushWidth = 6;
     let brush = d3.brushY().extent([[0, 0], [brushWidth, storyHeight]]).on("end", function () {

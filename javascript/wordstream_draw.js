@@ -51,7 +51,10 @@ function draw(data) {
     }
 
     let placed = true;
-    texts = mainGroup.append("g").attr("transform", `translate(${margin.axisx}, 0)`).selectAll('g').data(allWords).enter().append('g');
+    //Remove all existing data if there is.
+    mainGroup.selectAll(".wordStreamGroup").remove();
+
+    texts = mainGroup.append("g").attr("class", "wordStreamGroup").attr("transform", `translate(${margin.axisx}, 0)`).selectAll('g').data(allWords).enter().append('g');
     texts
         .attr("transform", function (d) {
             return 'translate(' + d.x + ', ' + d.y + ')rotate(' + d.rotate + ')';
