@@ -19,15 +19,16 @@ let mainsvg = d3.select("#mainsvg"),
     // svgWidth = window.outerWidth,
     // svgHeight = window.outerHeight,
     axisHeight = 40,
-    margin = {top: 40, right: 40, bottom: 40, left: 40, axisx: 40, axisy: 40, storyTop: 20},
+    margin = {top: 40, right: 40, bottom: 40, left: 80, axisx: 40, axisy: 40, storyTop: 20},
     width = svgWidth - margin.left - margin.right - margin.axisx,
     height = svgHeight - margin.top - margin.storyTop - margin.axisx - margin.bottom,
     wordStreamHeight = 200,
-    wordStreamWidth = width;
-let clicked = false;
-let links = null;
-
-storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
+    wordStreamWidth = width,
+    clicked = false,
+    links = null,
+    axisx = null,
+    authorScoreAxis = null,
+    storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
     authorStartY = 0 + wordStreamHeight,
     authorEndY = authorStartY + authorHeight,
     storyStartY = authorEndY + margin.storyTop,
@@ -37,33 +38,33 @@ storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
     scaleX = d3.scaleLinear().rangeRound([0, width]),
     scaleAuthorScore = d3.scaleLog().rangeRound([authorEndY, authorStartY]),
     scaleStoryScore = d3.scaleLog().rangeRound([storyEndY, storyStartY]),
+    scaleScore = d3.scaleLog().rangeRound([authorHeight, 0]),
+
     scaleRadius = d3.scaleLinear().rangeRound([2, 9]),
     mainGroup = mainsvg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`),
     dispatch = d3.dispatch("up", "down");
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
 
-
-d3.json("data/iothackernews.json", function (error, data) {
+d3.json("data/iothackernews.json", function (error, rawData) {
     if (error) throw error;
     //<editor-fold desc="process data">
     //take data from 2011 or later only
-    data = data.filter(d => d.timestamp >= new Date("2011-01-01"));
+    rawData = rawData.filter(d => d.timestamp >= new Date("2011-01-01"));
+    let rawStories = extractStories(rawData);
 
-    let stories = [];
-    data.forEach(d => {
-        //initialize all level as 0//this will get increased later-on when we count.
-        d.commentLevel = 0;
-        d.postCount = countAllComments(d.id, data);
-        if (d.type === "story") {
-            stories.push(d);
-        }
-    });
-    //test the data
-    loadNewsData(stories, draw);
-
-    let authors = processAuthors(data);
-    let allData = data.concat(authors);
+    function extractStories(data) {
+        let stories = [];
+        data.forEach(d => {
+            //initialize all level as 0//this will get increased later-on when we count.
+            d.commentLevel = 0;
+            d.postCount = countAllComments(d.id, data);
+            if (d.type === "story") {
+                stories.push(d);
+            }
+        });
+        return stories;
+    }
 
     function getChildren(postId, data) {
 
@@ -131,15 +132,16 @@ d3.json("data/iothackernews.json", function (error, data) {
         let result = [];
         if (post.type === "author") {
             let words = authorWords[post.id];
-            words.forEach(word => {
-                try {
-                    result.push(d3.select("#id" + word).datum());
-                } catch (err) {
-                    console.log(word);
-                    debugger
-                }
-
-            });
+            if (words) {
+                words.forEach(word => {
+                    try {
+                        result.push(d3.select("#id" + word).datum());
+                    } catch (error) {
+                        console.log("invalid id #id"+word);
+                        console.log(error);
+                    }
+                });
+            }
             return result;
         } else {
             result = data.filter(d => d.id === post.parent).concat(getAuthor(post, data));
@@ -149,106 +151,122 @@ d3.json("data/iothackernews.json", function (error, data) {
     }
 
     //</editor-fold>
+    //The slider is based on rawData
+    scaleX.domain(d3.extent(rawData.map(d => +d.timestamp)));
+    let scoreDomain = d3.extent(rawStories.map(d => +d.score));
+    scaleScore.domain(scoreDomain);
 
-    scaleX.domain(d3.extent(data.map(d => +d.timestamp)));
-    let scoreDomain = d3.extent(stories.map(d => +d.score));
-    scaleStoryScore.domain(scoreDomain);
-    scaleAuthorScore.domain(scoreDomain);
-    scaleRadius.domain(d3.extent(stories.concat(authors).map(d => Math.sqrt(d.postCount))));
-
-    //<editor-fold desc="force simulation">
-    let simulation = d3.forceSimulation(allData)
-        .force("x", d3.forceX(d => scaleX(+d.timestamp)))
-        .force("y", d3.forceY(d => {
-            if (d.type === "author") {
-                return scaleAuthorScore(+d.score);
+    //The data
+    let allData = null;
+    function updateDisplay(scoreRange){
+        //Filter stories
+        let data = rawData.filter(d=>{
+            if(d.type!=="story"){
+                return true;
+            }else{
+                return d.score >= scoreRange[0] && d.score <= scoreRange[1];
             }
-            if (d.type === "story") {
-                return scaleStoryScore(+d.score);
-            }
-            if (d.type === "comment") {
-                return commentStartY + 80 + d.commentLevel * commentHeight;//80 is for the expansion of the comments due to collisions (may remove this since displayin gcomments on demand only => would not have this many.
-            }
-        }))
-        .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
-        .stop();
+        });
+        let stories = extractStories(data);
+        //Select all.
+        mainGroup.selectAll("*").remove();
 
-    for (let i = 0; i < 120; i++) {
-        simulation.tick();
-    }
-    //</editor-fold>
+        loadNewsData(stories, draw);//load the hacker news stories (only title) to display for the word stream
+        let authors = processAuthors(data); //load authors data
+            allData = data.concat(authors); //add authors data to the list of nodes.
 
-    //<editor-fold desc="axis">
-    mainGroup.append("g")
-        .attr("class", 'axis axis--x')
-        .attr("transform", `translate(${margin.axisx},${storyStartY + storyHeight + margin.axisx})`)
-        .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
+        let scoreDomain = d3.extent(stories.map(d => +d.score));//new score domain after filtering
+        scaleStoryScore.domain(scoreDomain);
+        scaleAuthorScore.domain(scoreDomain);
+        scaleRadius.domain(d3.extent(stories.concat(authors).map(d => Math.sqrt(d.postCount))));
 
-    mainGroup.append("g")
-        .attr("class", "axis axis--y")
-        .call(d3.axisLeft(scaleAuthorScore).ticks(10, ".0s"));
-
-    mainGroup.append("g")
-        .attr("class", "axis axis--y")
-        .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
-
-    function formatTime(unix_timestamp) {
-        let date = new Date(unix_timestamp),
-            year = date.getFullYear(),
-            month = date.getMonth(),
-            day = date.getDate(),
-            formattedTime = year + '-' + (month + 1) + '-' + day;
-        return formattedTime;
-    }
-
-    //</editor-fold>
-
-    links = mainGroup.append("g")
-        .attr("class", "links")
-        .attr("transform", `translate(${margin.axisx}, 0)`);
-
-    let cells = mainGroup.append("g")
-        .attr("class", "cells")
-        .attr("transform", `translate(${margin.axisx}, 0)`)
-        .selectAll("g").data(allData).enter().append("g");
-
-    cells.append("circle")
-        .attr("id", d => "id" + d.id)
-        .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
-        .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
-        .on("mouseover", (d) => {
-            if (!clicked) {
-                mainGroup.selectAll("circle").classed("faded", true);
-                mainGroup.selectAll(".wordletext").classed("faded", true);
-
-                d3.select("#info").style("display", "inline");
+        //<editor-fold desc="force simulation">
+        let simulation = d3.forceSimulation(allData)
+            .force("x", d3.forceX(d => scaleX(+d.timestamp)))
+            .force("y", d3.forceY(d => {
                 if (d.type === "author") {
-                    displayAuthor(d);
+                    return scaleAuthorScore(+d.score);
                 }
                 if (d.type === "story") {
-                    displayStory(d);
+                    return scaleStoryScore(+d.score);
                 }
                 if (d.type === "comment") {
-                    displayComment(d);
+                    return commentStartY + 80 + d.commentLevel * commentHeight;//80 is for the expansion of the comments due to collisions (may remove this since displayin gcomments on demand only => would not have this many.
                 }
-                dispatch.call("up", null, d);
-                dispatch.call("down", null, d);
-            }
-        })
-        .on("mouseleave", () => {
-            if (!clicked) {
-                mainGroup.selectAll(".faded").classed("faded", false);
-                d3.select("#info").style("display", "none");
-                links.selectAll("*").remove();
-                mainGroup.selectAll(".brushed").classed("brushed", false);
-            }
-        })
-        .on("click", () => {
-            clicked = !clicked;
-        });
+            }))
+            .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
+            .stop();
 
+        for (let i = 0; i < 120; i++) {
+            simulation.tick();
+        }
+        //</editor-fold>
+
+        //<editor-fold desc="axis">
+        axisx = mainGroup.append("g")
+            .attr("class", 'axis axis--x')
+            .attr("transform", `translate(${margin.axisx},${storyStartY + storyHeight + margin.axisx})`)
+            .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
+
+        authorScoreAxis = mainGroup.append("g")
+            .attr("class", "axis axis--y");
+        authorScoreAxis
+            .call(d3.axisLeft(scaleAuthorScore).ticks(10, ".0s"));
+
+        mainGroup.append("g")
+            .attr("class", "axis axis--y")
+            .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
+
+        //</editor-fold>
+
+        links = mainGroup.append("g")
+            .attr("class", "links")
+            .attr("transform", `translate(${margin.axisx}, 0)`);
+
+        let cells = mainGroup.append("g")
+            .attr("class", "cells")
+            .attr("transform", `translate(${margin.axisx}, 0)`)
+            .selectAll("g").data(allData).enter().append("g");
+
+        cells.append("circle")
+            .attr("id", d => "id" + d.id)
+            .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
+            .on("mouseover", (d) => {
+                if (!clicked) {
+                    mainGroup.selectAll("circle").classed("faded", true);
+                    mainGroup.selectAll(".wordletext").classed("faded", true);
+
+                    d3.select("#info").style("display", "inline");
+                    if (d.type === "author") {
+                        displayAuthor(d);
+                    }
+                    if (d.type === "story") {
+                        displayStory(d);
+                    }
+                    if (d.type === "comment") {
+                        displayComment(d);
+                    }
+                    dispatch.call("up", null, d);
+                    dispatch.call("down", null, d);
+                }
+            })
+            .on("mouseleave", () => {
+                if (!clicked) {
+                    mainGroup.selectAll(".faded").classed("faded", false);
+                    d3.select("#info").style("display", "none");
+                    links.selectAll("*").remove();
+                    mainGroup.selectAll(".brushed").classed("brushed", false);
+                }
+            })
+            .on("click", () => {
+                clicked = !clicked;
+            });
+
+
+    }
     dispatch.on("up", node => {
         let selection = d3.select("#id" + node.id);
         selection.classed("faded", false);
@@ -344,10 +362,39 @@ d3.json("data/iothackernews.json", function (error, data) {
         d3.select("#info").html(msg);
     }
 
+    function formatTime(unix_timestamp) {
+        let date = new Date(unix_timestamp),
+            year = date.getFullYear(),
+            month = date.getMonth(),
+            day = date.getDate(),
+            formattedTime = year + '-' + (month + 1) + '-' + day;
+        return formattedTime;
+    }
     document.onkeyup = function (e) {
         if (e.key === "Escape") {
             clicked = false;
         }
     };
     spinner.stop();
+    //<editor-fold: desc="section for the slider">
+    let brushWidth = 6;
+    let brush = d3.brushY().extent([[0, 0], [brushWidth, storyHeight]]).on("end", function () {
+        updateDisplay(d3.event.selection.map(scaleScore.invert).reverse());
+    });
+    let brushGroup = mainsvg.append("g").attr("class", "brush")
+        .attr("transform", `translate(${(margin.left - brushWidth) / 2}, ${margin.top + storyStartY})`);
+    let scoreAxis = brushGroup.append("g")
+        .attr("class", "axis axis--y");
+    scoreAxis
+        .call(d3.axisLeft(scaleScore).ticks(10, ".0s"));
+
+    brushGroup.call(brush);
+    brushGroup.selectAll(".overlay").style("fill", '#888');
+    brushGroup.selectAll(".selection").style("fill", null).attr("fill-opacity", 1).style("fill", "#ddd");
+    brushGroup.selectAll("rect.handle").style('fill', "#aaa");
+    brush.move(brushGroup, scaleScore.range().reverse());
+
+//</editor-fold>
 });
+
+
