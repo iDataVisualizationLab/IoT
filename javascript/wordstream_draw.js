@@ -57,6 +57,7 @@ function draw(data) {
             return 'translate(' + d.x + ', ' + d.y + ')rotate(' + d.rotate + ')';
         })
         .append('text')
+        .attr("class", "wordletext")
         .text(function (d) {
             return d.text;
         })
@@ -80,7 +81,7 @@ function draw(data) {
         .on("mouseover", d => {//Todo: Can generalize this together with the cells so we don't have to re-code
             if (!clicked) {
                 mainGroup.selectAll("circle").classed("faded", true);
-                mainGroup.selectAll("text").classed("faded", true);
+                mainGroup.selectAll(".wordletext").classed("faded", true);
                 dispatch.call("down", null, d);
             }
         })
