@@ -23,7 +23,16 @@ function loadNewsData(rawData, draw) {
             .replace("”", '')
             .replace("-$", '')
             .replace("\$", "USD")
-            .replace("'", ' ');
+            .replace("'", '')
+            .replace("’", '')
+            .replace(".", '')
+            .replace("#", '')
+            .replace("/", '')
+            .replace("+", '')
+            .replace(";", '')
+            .replace("&", 'and')
+            .replace("=", '');
+
 
         return word;
     }
@@ -58,6 +67,7 @@ function loadNewsData(rawData, draw) {
         let words = d.title.split(' ');
         words = words.map(d => sanitizeWord((d)));
         words = removeStopWords(words, stopWords);
+        words = words.filter(t=>t!='');//remove empty words
         words.forEach(word => {
             let wordTime = word + date;
             if (!authorWords[author]) authorWords[author] = [];

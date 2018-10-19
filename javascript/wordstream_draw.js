@@ -26,16 +26,30 @@ function draw(data) {
             allWords = allWords.concat(row.words[topic]);
         });
     });
-    let c20 = d3.scaleOrdinal(d3["schemeCategory20c"]);
-    //Color based on term
+    let c10 = d3.scaleOrdinal(d3["schemeCategory10"]);
+    // //Color based on term
+    // let uniqueTerms = d3.set(allWords, w=>w.text).values();
+    // let termColorMap = d3.scaleOrdinal().domain(uniqueTerms).range(c10.range());
     let terms = [];
-    for (let i = 0; i < allWords.length; i++) {
-        terms.concat(allWords[i].text);
-    }
-    let uniqueTerms = d3.set(terms).values();
-    let termColorMap = d3.scaleOrdinal()
+    d3.map(boxes.data, function (row) {
+        boxes.topics.forEach(topic => {
+            terms = terms.concat(row.words[topic].slice(0, 10));//take top 10 terms from each box
+        });
+    });
+    //resort terms
+    terms = terms.sort((a, b) => b.frequency - a.frequency);
+    let uniqueTerms = d3.set(terms, d => d.text).values().slice(0, 10);//take top 10 unique terms
+    let termColor = d3.scaleOrdinal()
         .domain(uniqueTerms)
-        .range(c20.range());
+        .range(c10.range());
+    let termColorMap = function (text) {
+        if (uniqueTerms.indexOf(text) >= 0) {
+            return termColor(text);
+        } else {
+            return "#aaa";
+        }
+    }
+
     let placed = true;
     texts = mainGroup.append("g").attr("transform", `translate(${margin.axisx}, 0)`).selectAll('g').data(allWords).enter().append('g');
     texts
@@ -76,6 +90,9 @@ function draw(data) {
                 links.selectAll("*").remove();
                 mainGroup.selectAll(".brushed").classed("brushed", false);
             }
+        })
+        .on("click", ()=>{
+            clicked = !clicked;
         });
 }
 

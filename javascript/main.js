@@ -13,7 +13,7 @@ let links = null;
 storyHeight = authorHeight = commentHeight = (height - wordStreamHeight) / 3,
     authorStartY = 0 + wordStreamHeight,
     authorEndY = authorStartY + authorHeight,
-    storyStartY = authorEndY,
+    storyStartY = authorEndY + margin.storyTop,
     storyEndY = storyStartY + storyHeight,
     commentStartY = storyStartY + storyHeight + axisHeight,
 
