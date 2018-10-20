@@ -99,5 +99,7 @@ function draw(data) {
         .on("click", ()=>{
             clicked = !clicked;
         });
+    // //This section is to set the autocomplete word
+    autocomplete(document.getElementById("theWord"), d3.set(allWords.filter(w=>w.placed).map(w=>w.text)).values());
 }
 

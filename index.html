@@ -44,6 +44,18 @@
 <!-- Spinner when loading -->
 <div id="loadingSpinner"></div>
 <div id="info" style="display: none; background-color:white;"></div>
+<!--section for auto-complete: adopted from w3schools-->
+<style>
+@import "css/autocomplete.css";
+</style>
+<script src="lib/autocomplete.js"></script>
+<form autocomplete="off" action="none">
+    <div class="autocomplete" style="width:300px;">
+        <input id="theWord" type="text" name="theWord" placeholder="words">
+    </div>
+    <input type="button" value="Submit" onclick="searchWord()">
+</form>
+
 <svg id="mainsvg"></svg>
 <script src="javascript/d3.layout.wordstream.js"></script>
 <script src="javascript/wordstream_draw.js"></script>

@@ -46,8 +46,10 @@ let mainsvg = d3.select("#mainsvg"),
     dispatch = d3.dispatch("up", "down");
 
 mainsvg.attr("width", svgWidth).attr("height", svgHeight);
-
+let self = null;
+let currentScoreRange = null;
 d3.json("data/iothackernews.json", function (error, rawData) {
+    self = this;
     if (error) throw error;
     //<editor-fold desc="process data">
     //take data from 2011 or later only
@@ -138,7 +140,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
                     try {
                         result.push(d3.select("#id" + word).datum());
                     } catch (error) {
-                        console.log("invalid id #id"+word);
+                        console.log("invalid id #id" + word);
                         console.log(error);
                     }
                 });
@@ -167,24 +169,29 @@ d3.json("data/iothackernews.json", function (error, rawData) {
     let cellGroup = mainGroup.append("g")
         .attr("class", "cells")
         .attr("transform", `translate(${margin.axisx}, 0)`);
-    function updateDisplay(scoreRange){
+    self.updateDisplay = function updateDisplay(scoreRange) {
+
         //Filter stories
-        let data = rawData.filter(d=>{
-            if(d.type!=="story"){
+        let data = rawData.filter(d => {
+            if (d.type !== "story") {
                 return true;
-            }else{
+            } else {
                 return d.score >= scoreRange[0] && d.score <= scoreRange[1];
             }
         });
+        let word = document.getElementById("theWord").value;
+        if (word) {
+            data = data.filter(d=>d.title.toLowerCase().indexOf(word.toLowerCase())>=0);
+        }
         let stories = extractStories(data);
         ////TODO: Shouldn't remove all but add/update/exit merge
         //Remove axis for author + story scores since we changed it
-        if(authorScoreAxis) authorScoreAxis.remove();
-        if(storyScoreAxis) storyScoreAxis.remove();
+        if (authorScoreAxis) authorScoreAxis.remove();
+        if (storyScoreAxis) storyScoreAxis.remove();
 
         loadNewsData(stories, draw);//load the hacker news stories (only title) to display for the word stream
         let authors = processAuthors(data); //load authors data
-            allData = data.concat(authors); //add authors data to the list of nodes.
+        allData = data.concat(authors); //add authors data to the list of nodes.
 
         let scoreDomain = d3.extent(stories.map(d => +d.score));//new score domain after filtering
         scaleStoryScore.domain(scoreDomain);
@@ -207,9 +214,11 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             }))
             .force("collide", d3.forceCollide(d => scaleRadius(Math.sqrt(d.postCount)) + 1))
             .on("tick", ticked);
-        function ticked(){
-            circles.transition().attr("transform", d=>`translate(${d.x}, ${d.y})`);
+
+        function ticked() {
+            circles.transition().attr("transform", d => `translate(${d.x}, ${d.y})`);
         }
+
         //</editor-fold>
 
         //<editor-fold desc="axis">
@@ -377,6 +386,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             formattedTime = year + '-' + (month + 1) + '-' + day;
         return formattedTime;
     }
+
     document.onkeyup = function (e) {
         if (e.key === "Escape") {
             clicked = false;
@@ -385,7 +395,8 @@ d3.json("data/iothackernews.json", function (error, rawData) {
     //<editor-fold: desc="section for the slider">
     let brushWidth = 6;
     let brush = d3.brushY().extent([[0, 0], [brushWidth, storyHeight]]).on("end", function () {
-        updateDisplay(d3.event.selection.map(scaleScore.invert).reverse());
+        currentScoreRange = d3.event.selection.map(scaleScore.invert).reverse();
+        updateDisplay(currentScoreRange);
     });
     let brushGroup = mainsvg.append("g").attr("class", "brush")
         .attr("transform", `translate(${(margin.left - brushWidth) / 2}, ${margin.top + storyStartY})`);
@@ -403,4 +414,6 @@ d3.json("data/iothackernews.json", function (error, rawData) {
 //</editor-fold>
 });
 
-
+function searchWord() {
+    self.updateDisplay(currentScoreRange);
+}
