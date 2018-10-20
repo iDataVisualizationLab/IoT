@@ -402,5 +402,3 @@ d3.json("data/iothackernews.json", function (error, rawData) {
 
 //</editor-fold>
 });
-
-
