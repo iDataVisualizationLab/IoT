@@ -63,7 +63,20 @@ function loadNewsData(rawData, draw) {
 
     //</editor-fold>
 
-    let outputFormat = d3.timeFormat('%Y');
+    let outputFormat = function(date){
+        return d3.timeFormat('%Y')(date) + "Q" + getQuarter(date);
+    }
+    function getQuarter(date)
+    {
+        try{
+            var month = date.getMonth() + 1;
+        }catch(error){
+            console.log(date);
+            debugger
+        }
+
+        return (Math.ceil(month / 3));
+    }
     let data = {};
     let topic = "IoT";
     rawData.forEach(d => {
@@ -79,7 +92,6 @@ function loadNewsData(rawData, draw) {
                     d.title[startIdx+j] = p[j];
                 }
                 d.title = d.title.replace(p.toLowerCase(), 'myphrase'+i);
-                debugger
             }
         });
 
@@ -135,7 +147,7 @@ function loadNewsData(rawData, draw) {
             words: words
         }
     }).sort(function (a, b) {//sort by date
-        return outputFormat(a.date) - outputFormat(b.date);
+        return a.date.localeCompare(b.date);
     });
     draw(data);
 }
