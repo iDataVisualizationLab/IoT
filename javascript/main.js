@@ -14,12 +14,12 @@ var spinner = new Spinner(opts).spin(target);
 // END: loader spinner settings ****************************
 
 let mainsvg = d3.select("#mainsvg"),
-    svgWidth = 1700,
-    svgHeight = 900,
+    svgWidth = 1650,
+    svgHeight = 1000,
     // svgWidth = window.outerWidth,
     // svgHeight = window.outerHeight,
     axisHeight = 40,
-    margin = {top: 40, right: 40, bottom: 40, left: 80, axisx: 40, axisy: 40, storyTop: 20},
+    margin = {top: 40, right: 40, bottom: 40, left: 80, axisx: 40, axisy: 40, storyTop: 40},
     width = svgWidth - margin.left - margin.right - margin.axisx,
     height = svgHeight - margin.top - margin.storyTop - margin.axisx - margin.bottom,
     wordStreamHeight = 200,
