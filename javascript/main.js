@@ -266,8 +266,8 @@ d3.json("data/iothackernews.json", function (error, rawData) {
                 }
             })
             .on("mouseleave", () => {
-                d3.select("#info").style("display", "none");
                 if (!clicked) {
+                    d3.select("#info").style("display", "none");
                     mainGroup.selectAll(".faded").classed("faded", false);
                     links.selectAll("*").remove();
                     mainGroup.selectAll(".brushed").classed("brushed", false);
