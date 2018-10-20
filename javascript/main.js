@@ -245,28 +245,30 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
             .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
             .on("mouseover", (d) => {
+                if (d.type === "author") {
+                    displayAuthor(d);
+                }
+                if (d.type === "story") {
+                    displayStory(d);
+                }
+                if (d.type === "comment") {
+                    displayComment(d);
+                }
+
                 if (!clicked) {
                     mainGroup.selectAll("circle").classed("faded", true);
                     mainGroup.selectAll(".wordletext").classed("faded", true);
 
                     d3.select("#info").style("display", "inline");
-                    if (d.type === "author") {
-                        displayAuthor(d);
-                    }
-                    if (d.type === "story") {
-                        displayStory(d);
-                    }
-                    if (d.type === "comment") {
-                        displayComment(d);
-                    }
+
                     dispatch.call("up", null, d);
                     dispatch.call("down", null, d);
                 }
             })
             .on("mouseleave", () => {
+                d3.select("#info").style("display", "none");
                 if (!clicked) {
                     mainGroup.selectAll(".faded").classed("faded", false);
-                    d3.select("#info").style("display", "none");
                     links.selectAll("*").remove();
                     mainGroup.selectAll(".brushed").classed("brushed", false);
                 }
