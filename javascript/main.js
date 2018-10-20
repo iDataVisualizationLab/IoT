@@ -222,10 +222,11 @@ d3.json("data/iothackernews.json", function (error, rawData) {
         //</editor-fold>
 
         //<editor-fold desc="axis">
+        let xAxisScale = d3.scaleBand().domain(dateLabels).range([0, width]);
         axisx = mainGroup.append("g")
             .attr("class", 'axis axis--x')
             .attr("transform", `translate(${margin.axisx},${storyStartY + storyHeight + margin.axisx})`)
-            .call(d3.axisBottom(scaleX).ticks(10).tickFormat(formatTime));
+            .call(d3.axisBottom(xAxisScale));
 
         authorScoreAxis = mainGroup.append("g")
             .attr("class", "axis axis--y")

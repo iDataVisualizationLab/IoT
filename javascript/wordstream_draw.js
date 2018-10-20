@@ -1,5 +1,5 @@
 let texts = null;
-
+let dateLabels = [];
 function draw(data) {
     //Layout data
     let width = wordStreamWidth;
@@ -15,7 +15,9 @@ function draw(data) {
         .data(data)
         .font(font);
     let boxes = ws.boxes();
-
+    boxes.data.forEach(row =>{
+        dateLabels.push(row.date);
+    });
     let allWords = [];
     d3.map(boxes.data, function (row) {
         boxes.topics.forEach(topic => {
