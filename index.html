@@ -13,7 +13,7 @@
             shape-rendering: crispEdges;
         }
         .axis text{
-            font: 10px sans-serif;
+            font: 11px sans-serif;
         }
         .cells :hover circle{
             fill: red;
@@ -26,14 +26,15 @@
             opacity: 0.2;
         }
         #info{
-            border: solid 3px orange;
+            border: solid 1px black;
             -webkit-border-radius: 5px;
             -moz-border-radius: 5px;
             border-radius: 5px;
+            box-shadow: 5px 5px 5px #444;
             padding: 10px;
             position: absolute;
-            top: 800px;
-            left: 55px;
+            top: 900px;
+            left: 20px;
             margin-right: 55px;
             pointer-events: none;
         }
@@ -50,7 +51,7 @@
 </style>
 <script src="lib/autocomplete.js"></script>
 <form autocomplete="off" action="none">
-    <div class="autocomplete" style="width:300px;">
+    <div class="autocomplete" style="width:100px;">
         <input id="theWord" type="text" name="theWord" placeholder="words">
     </div>
     <input type="button" value="Submit" onclick="searchWord()">
