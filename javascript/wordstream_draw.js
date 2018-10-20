@@ -10,8 +10,8 @@ function draw(data) {
         .size([width, height])
         .interpolate(interpolation)
         .fontScale(d3.scaleLinear())
-        .minFontSize(4)
-        .maxFontSize(36)
+        .minFontSize(6)
+        .maxFontSize(24)
         .data(data)
         .font(font);
     let boxes = ws.boxes();

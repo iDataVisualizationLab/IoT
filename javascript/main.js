@@ -14,7 +14,7 @@ var spinner = new Spinner(opts).spin(target);
 // END: loader spinner settings ****************************
 
 let mainsvg = d3.select("#mainsvg"),
-    svgWidth = 1600,
+    svgWidth = 1700,
     svgHeight = 900,
     // svgWidth = window.outerWidth,
     // svgHeight = window.outerHeight,
