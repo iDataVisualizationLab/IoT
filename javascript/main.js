@@ -181,7 +181,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
         });
         let word = document.getElementById("theWord").value;
         if (word) {
-            data = data.filter(d=>d.title.toLowerCase().indexOf(word.toLowerCase())>=0);
+            data = data.filter(d=> d.type!=="story" || d.title.toLowerCase().indexOf(word.toLowerCase())>=0)
         }
         let stories = extractStories(data);
         ////TODO: Shouldn't remove all but add/update/exit merge
