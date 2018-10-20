@@ -321,7 +321,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .attr("y1", node.y)
             .attr("x2", d => d.x)
             .attr("y2", d => d.y)
-            .attr("stroke", "red")
+            .attr("stroke", "black")
             .attr("stroke-width", 0.3)
             .attr("opacity", 0.9)
             .style("pointer-events", "none");
