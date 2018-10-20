@@ -10,7 +10,7 @@ function draw(data) {
         .size([width, height])
         .interpolate(interpolation)
         .fontScale(d3.scaleLinear())
-        .minFontSize(6)
+        .minFontSize(8)
         .maxFontSize(24)
         .data(data)
         .font(font);

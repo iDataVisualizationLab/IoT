@@ -54,7 +54,11 @@ d3.json("data/iothackernews.json", function (error, rawData) {
     //<editor-fold desc="process data">
     //take data from 2011 or later only
     rawData = rawData.filter(d => d.timestamp >= new Date("2011-01-01"));
+
     let rawStories = extractStories(rawData);
+    //TODO: Should use recursive to mark reachable comments to replace this quick fix.
+    //filter out comments without parent
+    rawData = rawData.filter(d=>d.type!=="comment" || getParent(d, rawData).length > 0);
 
     function extractStories(data) {
         let stories = [];
