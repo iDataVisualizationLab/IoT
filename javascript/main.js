@@ -159,6 +159,11 @@ d3.json("data/iothackernews.json", function (error, rawData) {
 
     //The data
     let allData = null;
+
+    links = mainGroup.append("g")
+        .attr("class", "links")
+        .attr("transform", `translate(${margin.axisx}, 0)`);
+
     let cellGroup = mainGroup.append("g")
         .attr("class", "cells")
         .attr("transform", `translate(${margin.axisx}, 0)`);
@@ -222,11 +227,6 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .call(d3.axisLeft(scaleStoryScore).ticks(10, ".0s"));
 
         //</editor-fold>
-
-        links = mainGroup.append("g")
-            .attr("class", "links")
-            .attr("transform", `translate(${margin.axisx}, 0)`);
-
 
         let cells = cellGroup.selectAll("circle").data(allData);
         let circles = cells.enter().append("circle")
