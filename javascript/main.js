@@ -247,7 +247,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
             .merge(cells)
             .attr("id", d => "id" + d.id)
             .attr("r", d => scaleRadius(Math.sqrt(d.postCount)))
-            .attr("fill", d => d.type === "story" ? "#000" : "steelblue")
+            .attr("fill", d => d.type === "story" ? "#000" : "#444")
             .on("mouseover", (d) => {
                 if (d.type === "author") {
                     displayAuthor(d);
@@ -262,9 +262,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
                 if (!clicked) {
                     mainGroup.selectAll("circle").classed("faded", true);
                     mainGroup.selectAll(".wordletext").classed("faded", true);
-
                     d3.select("#info").style("display", "inline");
-
                     dispatch.call("up", null, d);
                     dispatch.call("down", null, d);
                 }
