@@ -56,7 +56,7 @@ d3.json("data/iothackernews.json", function (error, rawData) {
     rawData = rawData.filter(d => d.timestamp >= new Date("2011-01-01"));
 
     let rawStories = extractStories(rawData);
-    //TODO: Should use recursive to mark reachable comments to replace this quick fix.
+    //TODO: Should use recursive to mark reachable comments to replace this quick fix. Another error is that a comment searched has a parent comment, but the parent comment doesn't have parent so it is removed then the sub-comment doesn't have parent anymore (but it was having a parent)
     //filter out comments without parent
     rawData = rawData.filter(d=>d.type!=="comment" || getParent(d, rawData).length > 0);
 
