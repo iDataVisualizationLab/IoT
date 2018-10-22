@@ -15,8 +15,8 @@ d3.wordStream = function(){
     let wordStream = {};
 
     let cloudRadians = Math.PI / 180,
-        cw = 1 << 11,
-        ch = 1 << 11;
+        cw = 1 << 13,
+        ch = 1 << 13;
 
     wordStream.boxes = function(){
         buildFontScale(data);
